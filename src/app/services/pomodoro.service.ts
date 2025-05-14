@@ -6,47 +6,67 @@ import { Haptics } from '@capacitor/haptics';
   providedIn: 'root'
 })
 export class PomodoroService {
-  private timer: any;
-  private totalSeconds: number = 0;
+  private timerInterval: any;
+  private isWorkTime = true;
+  private isRunning = false;
 
-  startTimer(duration: number, onTick: (time: string) => void, onComplete: () => void) {
-    this.totalSeconds = duration;
-    this.updateDisplay(onTick);
+  public remainingSeconds: number = 0;
 
-    this.timer = setInterval(async () => {
-      this.totalSeconds--;
-      this.updateDisplay(onTick);
+  // Exposed getters for component access
+  public get running() {
+    return this.isRunning;
+  }
 
-      if (this.totalSeconds <= 0) {
-        clearInterval(this.timer);
-        onComplete();
+  public get workMode() {
+    return this.isWorkTime;
+  }
+
+  startTimer(duration: number, onTick: (seconds: number) => void, onDone: () => void) {
+    this.remainingSeconds = duration;
+    this.isRunning = true;
+
+    this.timerInterval = setInterval(() => {
+      this.remainingSeconds--;
+      onTick(this.remainingSeconds);
+
+      if (this.remainingSeconds <= 0) {
+        clearInterval(this.timerInterval);
+        this.isRunning = false;
+        onDone();
       }
     }, 1000);
   }
 
   stopTimer() {
-    clearInterval(this.timer);
+    clearInterval(this.timerInterval);
+    this.isRunning = false;
   }
 
-  async sendNotification(message: string) {
-    await LocalNotifications.requestPermissions();
+  reset(duration: number) {
+    this.stopTimer();
+    this.remainingSeconds = duration;
+    this.isWorkTime = true;
+  }
+
+  switchToBreak(breakDuration: number, onTick: (seconds: number) => void, onDone: () => void) {
+    this.isWorkTime = false;
+    this.startTimer(breakDuration, onTick, onDone);
+  }
+
+  switchToWork(workDuration: number, onTick: (seconds: number) => void, onDone: () => void) {
+    this.isWorkTime = true;
+    this.startTimer(workDuration, onTick, onDone);
+  }
+
+  async notify(title: string, body: string) {
     await LocalNotifications.schedule({
-      notifications: [
-        {
-          title: 'Pomodoro App',
-          body: message,
-          id: Date.now(),
-          schedule: { at: new Date(Date.now() + 100) }
-        }
-      ]
+      notifications: [{
+        title,
+        body,
+        id: Date.now(),
+      }]
     });
 
-    await Haptics.vibrate();
-  }
-
-  private updateDisplay(callback: (time: string) => void) {
-    const minutes = Math.floor(this.totalSeconds / 60).toString().padStart(2, '0');
-    const seconds = (this.totalSeconds % 60).toString().padStart(2, '0');
-    callback(`${minutes}:${seconds}`);
+    await Haptics.vibrate({ duration: 500 });
   }
 }

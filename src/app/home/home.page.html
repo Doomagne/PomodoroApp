@@ -1,15 +1,60 @@
 <ion-header>
-  <ion-toolbar>
-    <ion-title>Pomodoro Timer</ion-title>
+  <ion-toolbar color="primary">
+    <ion-title>
+      Pomodoro Timer
+    </ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  <div class="timer">
-    <h1>{{ timerDisplay || '00:00' }}</h1>
+<ion-content [fullscreen]="true" class="ion-padding">
+  <div class="time-display">
+    <h2>Current Time</h2>
+    <p>{{ formatCurrentTime() }}</p>
   </div>
 
-  <ion-button expand="full" (click)="startPomodoro()" [disabled]="isRunning">
-    Start Pomodoro Cycle
-  </ion-button>
+  <div class="timer-container">
+    <h2>{{ isWorkTime ? 'Work Time' : 'Break Time' }}</h2>
+    <div class="timer-display">
+      {{ formatTime(remainingSeconds) }}
+    </div>
+
+    <!-- Adjustable Time Inputs -->
+    <div class="time-settings">
+      <label>Work Time:</label>
+      <ion-item>
+        <ion-label position="floating">Minutes</ion-label>
+        <ion-input [(ngModel)]="workTimeMinutes" type="number" min="0" max="60"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-label position="floating">Seconds</ion-label>
+        <ion-input [(ngModel)]="workTimeSeconds" type="number" min="0" max="59"></ion-input>
+      </ion-item>
+
+      <label>Break Time:</label>
+      <ion-item>
+        <ion-label position="floating">Minutes</ion-label>
+        <ion-input [(ngModel)]="breakTimeMinutes" type="number" min="0" max="30"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-label position="floating">Seconds</ion-label>
+        <ion-input [(ngModel)]="breakTimeSeconds" type="number" min="0" max="59"></ion-input>
+      </ion-item>
+    </div>
+
+    <ion-button 
+      expand="block" 
+      color="primary" 
+      (click)="isRunning ? resetTimer() : startPomodoro()">
+      {{ isRunning ? 'Reset' : 'Start Pomodoro' }}
+    </ion-button>
+
+    <!-- Break button -->
+    <ion-button 
+      expand="block" 
+      color="secondary" 
+      (click)="startBreak()" 
+      [disabled]="isRunning || isWorkTime">
+      Start Break
+    </ion-button>
+  </div>
 </ion-content>
